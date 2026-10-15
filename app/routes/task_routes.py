@@ -2,7 +2,7 @@ from flask import Blueprint, request, Response
 from app.models.task import Task
 from ..db import db
 
-tasks_bp = Blueprint("tasks",__name__,url_prefix="/tasks")
+tasks_bp = Blueprint("tasks_bp",__name__,url_prefix="/tasks")
 
 @tasks_bp.post("")
 def create_new_task():
@@ -28,9 +28,13 @@ def create_new_task():
     ''''''
 
 
-@tasks_bp.get("/<id>")
-def get_task(id):
-    tasks = db.session.scalars(db.select(Task)).all()
-    tasks_list = [task.to_dict() for task in tasks]
+@tasks_bp.get("")
+def get_all_task():
+    query = db.select(Task).order_by(Task.id)
+    tasks_list = db.session.scalars(query)
 
-    return tasks_list, 200
+    task_response = []
+    for task in tasks_list:
+        task_response.append(task.to_dict())
+            
+    return task_response, 200
