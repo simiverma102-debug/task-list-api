@@ -34,7 +34,16 @@ def create_new_task():
 
 @tasks_bp.get("")
 def get_all_task():
-    query = db.select(Task).order_by(Task.id)
+    sort_query = request.args.get("sort")
+
+    query = db.select(Task)
+    if sort_query == 'asc':
+        query = query.order_by(Task.title.asc())
+    elif sort_query == 'desc':
+        query = query.order_by(Task.title.desc())    
+    else:
+        query = query.order_by(Task.id)    
+
     tasks_list = db.session.scalars(query)
 
     task_response = []
