@@ -1,4 +1,4 @@
-from flask import Blueprint, request, Response
+from flask import Blueprint, request, Response, abort, make_response
 from app.models.task import Task
 from ..db import db
 
@@ -6,12 +6,16 @@ tasks_bp = Blueprint("tasks_bp",__name__,url_prefix="/tasks")
 
 @tasks_bp.post("")
 def create_new_task():
-    request_body = request.get_json()
-    title = request_body["title"]
-    description = request_body["description"]
+    request_body = request.get_json(silent=True)
+
+    if not isinstance(request_body, dict):
+        return {"details": "Invalid data"}, 400
+
+    if "title" not in request_body or "description" not in request_body:
+        return {"details": "Invalid data"}, 400
     
 
-    new_task = Task(title=title, description=description)
+    new_task = Task.from_dict(request_body)
     db.session.add(new_task)
     db.session.commit()
 
@@ -38,3 +42,47 @@ def get_all_task():
         task_response.append(task.to_dict())
             
     return task_response, 200
+
+def validate_task(task_id):
+    try:
+       task_id = int(task_id)
+    except(ValueError, TypeError):
+        response = {"message": f"task {task_id} invalid"}
+        abort(make_response(response, 400))
+
+    query = db.select(Task).where(Task.id == task_id)
+    task = db.session.scalar(query)
+
+    if not task:
+        response = {"message": f"task {task_id} not found"}
+        abort(make_response(response, 404))
+
+    return task
+
+@tasks_bp.get("/<task_id>")
+def get_one_task(task_id):
+    task = validate_task(task_id)
+
+    return task.to_dict(), 200
+
+@tasks_bp.put("/<task_id>")
+def update_task(task_id):
+    task = validate_task(task_id)
+    request_body = request.get_json()
+
+    task.title = request_body["title"]
+    task.description = request_body["description"]
+    
+    db.session.commit()
+
+    return Response(status=204, mimetype="application/json")
+
+@tasks_bp.delete("/<task_id>")
+def delete_one_task(task_id):
+    task = validate_task(task_id)
+    db.session.delete(task)
+    db.session.commit()
+
+    return Response(status=204, mimetype="application/json")
+
+
