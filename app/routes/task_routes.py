@@ -1,6 +1,9 @@
 from flask import Blueprint, request, Response, abort, make_response
 from app.models.task import Task
 from ..db import db
+from datetime import datetime, timezone
+import os
+import requests
 
 tasks_bp = Blueprint("tasks_bp",__name__,url_prefix="/tasks")
 
@@ -94,4 +97,37 @@ def delete_one_task(task_id):
 
     return Response(status=204, mimetype="application/json")
 
+@tasks_bp.patch("/<task_id>/mark_complete")
+def mark_complete(task_id):
+    task = validate_task(task_id)
 
+    task.completed_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    slack_token = os.environ.get("SLACK_BOT_TOKEN")
+    print("Slack token loaded:", bool(slack_token))
+
+    if slack_token:
+        requests.post(
+            "https://slack.com/api/chat.postMessage",
+            headers={
+                "Authorization": f"Bearer {slack_token}"
+            },
+            json={
+                "channel": "task-notifications-c26",
+                "text": f"Someone just completed the task {task.title}"
+            },
+            timeout=10
+        )
+
+    return Response(status=204, mimetype="application/json")
+
+@tasks_bp.patch("/<task_id>/mark_incomplete")
+def mark_incomplete(task_id):
+    task = validate_task(task_id)
+
+    task.completed_at = None
+
+    db.session.commit()
+
+    return Response(status=204, mimetype="application/json")
