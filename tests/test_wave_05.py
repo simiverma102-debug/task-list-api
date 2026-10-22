@@ -153,7 +153,7 @@ def test_update_goal(client, one_goal):
 
     # Assert
     # ---- Complete Assertions Here ----
-    assert response.status_code == 200
+    assert response.status_code == 204
     query = db.select(Goal).where(Goal.id == 1)
     task = db.session.scalar(query)
     assert task.title == "Updated Goal Title"
