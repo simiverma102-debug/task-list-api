@@ -2,7 +2,7 @@ import pytest
 from werkzeug.exceptions import HTTPException
 from app.models.goal import Goal
 from app.models.task import Task
-from app.routes.route_utilities import create_model, validate_model
+from app.routes.routes_utilities import create_model, validate_model
 
 #@pytest.mark.skip(reason="No way to test this feature yet")
 def test_route_utilities_validate_model_with_task(client, three_tasks):
@@ -30,13 +30,16 @@ def test_route_utilities_validate_model_with_task_invalid_id(client, three_tasks
     # Calling `validate_model` without being invoked by a route will
     # cause an `HTTPException` when an `abort` statement is reached 
     with pytest.raises(HTTPException) as e:
-        result_task = validate_model(Task, "One")
+        validate_model(Task, "One")
     
     # Test that the correct status code and response message are returned
     response = e.value.get_response()
     assert response.status_code == 400
+    assert e.value.response.get_json() == {
+        "message":"Invalid Task ID"
+    } 
 
-    raise Exception("Complete test with an assertion about the response body")
+    #raise Exception("Complete test with an assertion about the response body")
     # *****************************************************************************
     # ** Complete test with an assertion about the response body ****************
     # *****************************************************************************
@@ -45,9 +48,14 @@ def test_route_utilities_validate_model_with_task_invalid_id(client, three_tasks
 def test_route_utilities_validate_model_with_task_missing_id(client, three_tasks):
     #Act & Assert
     with pytest.raises(HTTPException) as e:
-        result_task = validate_model(Task, 4)
+        validate_model(Task, 4)
+
+    assert e.value.response.status_code == 404
+    assert e.value.response.get_json() == {
+        "message":"Task 4 not found"
+    }    
     
-    raise Exception("Complete test with assertion status code and response body")
+    #raise Exception("Complete test with assertion status code and response body")
     # *****************************************************************************
     # **Complete test with assertion about status code response body***************
     # *****************************************************************************
@@ -67,8 +75,14 @@ def test_route_utilities_validate_model_with_goal_invalid_id(client, one_goal):
     #Act & Assert
     with pytest.raises(HTTPException) as e:
         result_task = validate_model(Goal, "One")
+
+    response = e.value.get_response()
+    assert response.status_code == 400
+    assert e.value.response.get_json() == {
+        "message":"Invalid Goal ID"
+    }     
     
-    raise Exception("Complete test with assertion status code and response body")
+    #raise Exception("Complete test with assertion status code and response body")
     # *****************************************************************************
     # **Complete test with assertion about status code response body***************
     # *****************************************************************************
@@ -79,7 +93,12 @@ def test_route_utilities_validate_model_with_goal_missing_id(client, one_goal):
     with pytest.raises(HTTPException) as e:
         result_task = validate_model(Goal, 4)
     
-    raise Exception("Complete test with assertion status code and response body")
+    response = e.value.get_response()
+    assert response.status_code == 404
+    assert e.value.response.get_json() == {
+        "message":"Goal 4 not found"
+    } 
+    #raise Exception("Complete test with assertion status code and response body")
     # *****************************************************************************
     # **Complete test with assertion about status code response body***************
     # *****************************************************************************
@@ -144,8 +163,15 @@ def test_route_utilities_create_model_with_goal_missing_title(client):
     #Act
     with pytest.raises(HTTPException) as e:
         create_model(Goal, request_body)
+
+    response = e.value.get_response()
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "details": "Invalid data"
+    }    
     
-    raise Exception("Complete test with assertion status code and response body")
+    #raise Exception("Complete test with assertion status code and response body")
     # *****************************************************************************
     # **Complete test with assertion about status code response body***************
     # *****************************************************************************

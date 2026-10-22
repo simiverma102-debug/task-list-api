@@ -4,7 +4,7 @@ from ..db import db
 from datetime import datetime, timezone
 import os
 import requests
-from app.routes.routes_utilities import validate_model
+from app.routes.routes_utilities import validate_model, create_model
 
 tasks_bp = Blueprint("tasks_bp",__name__,url_prefix="/tasks")
 
@@ -19,21 +19,7 @@ def create_new_task():
         return {"details": "Invalid data"}, 400
     
 
-    new_task = Task.from_dict(request_body)
-    db.session.add(new_task)
-    db.session.commit()
-
-    return new_task.to_dict(), 201
-
-    ''''''
-    response = dict(
-        id = new_task.id,
-        title = new_task.title,
-        description = new_task.description,
-        is_complete = new_task.is_complete
-    )
-    return response, 201
-    ''''''
+    return create_model(Task, request_body)
 
 
 @tasks_bp.get("")
