@@ -62,3 +62,28 @@ def delete_goal(goal_id):
     db.session.commit()
 
     return Response(status=204, mimetype="applicate/json")
+
+@goals_bp.post("/<goal_id>/tasks")
+def add_tasks_to_goal(goal_id):
+    goal = db.session.get(Goal, int(goal_id))
+
+    if goal is None:
+        return {"message": "Goal not found"}, 404
+
+    request_body = request.get_json()
+    task_ids = request_body["task_ids"]
+
+    for task_id in task_ids:
+        task = db.session.get(Task, task_id)
+
+        if task is None:
+            return {"message": f"Task {task_id} not found"}, 404
+
+        task.goal_id = goal.id
+
+    db.session.commit()
+
+    return {
+        "id": goal.id,
+        "task_ids": task_ids
+    }, 200
